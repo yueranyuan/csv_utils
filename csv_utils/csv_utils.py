@@ -65,7 +65,11 @@ def load_csv_rows(fname, header=None, no_nones=False):
         reader = csv.reader(f, delimiter='\t')
         if header is None:
             header = reader.next()
+        odd = False
         for row in reader:
+            odd = not odd
+            if odd:
+                continue
             if no_nones:
                 if len(row) != len(header):
                     continue
@@ -123,15 +127,36 @@ def rows_to_tuples(rows, headers=None):
     return headers, row_tuples
 
 def append_csv_rows(fname, rows, headers=None):
-    headers, row_tuples = rows_to_tuples(rows, headers=headers)
+    must_rewrite = False
+    must_load = False
 
     # if no file exists then header must be written
     if not os.path.exists(fname):
-        write_csv_headers_rows(fname, headers, row_tuples)
-        return
+        must_rewrite = True
+    else:
+        # if file exists then check that the headers are correct
+        with open(fname, 'r') as f:
+            reader = csv.reader(f, delimiter='\t')
+            old_headers = reader.next()
+            old_headers_set = set(old_headers)
+            headers_set = set(headers)
+            if len(headers_set - old_headers_set) == 0:
+                headers = old_headers
+            else:
+                headers = list(old_headers_set | headers_set)
+                must_rewrite = True
+                must_load = True
 
-    # if file exists then append just the rows
-    with open(fname, 'a+') as f:
-        writer = csv.writer(f, delimiter='\t')
-        for row in row_tuples:
-            writer.writerow(row)
+    if must_load:
+        old_rows = load_csv_rows(fname)
+        rows = old_rows + rows
+
+    headers, row_tuples = rows_to_tuples(rows, headers=headers)
+    if must_rewrite:
+        write_csv_headers_rows(fname, headers, row_tuples)
+    else:
+        # headers are correct, append just the rows
+        with open(fname, 'a+') as f:
+            writer = csv.writer(f, delimiter='\t')
+            for row in row_tuples:
+                writer.writerow(row)
