@@ -59,7 +59,7 @@ def load_csv(fname, header=None):
                     data[header[i]] = [val]
     return data
 
-def load_csv_rows(fname, header=None, no_nones=False):
+def load_csv_rows(fname, header=None, no_nones=False, drop_odds=False):
     data = []
     with open(fname) as f:
         reader = csv.reader(f, delimiter='\t')
@@ -68,7 +68,7 @@ def load_csv_rows(fname, header=None, no_nones=False):
         odd = False
         for row in reader:
             odd = not odd
-            if odd:
+            if drop_odds and odd:
                 continue
             if no_nones:
                 if len(row) != len(header):
