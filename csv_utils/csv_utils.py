@@ -37,7 +37,7 @@ def write_mongo_collection(fname, collection, headers=None):
     rows = [flatten_obj(obj) for obj in collection.find({})]
     write_csv_rows(fname, rows, headers)
 
-def load_csv(fname, header=None):
+def load_csv(fname, header=None, to_np=False):
     data = {}
     with open(fname) as f:
         reader = csv.reader(f, delimiter='\t')
@@ -57,12 +57,15 @@ def load_csv(fname, header=None):
                     data[header[i]].append(val)
                 except KeyError:
                     data[header[i]] = [val]
+    if to_np:
+        import numpy as np
+        data = {k: np.array(v) for k, v in data.iteritems()}
     return data
 
-def load_csv_rows(fname, header=None, no_nones=False, drop_odds=False):
+def load_csv_rows(fname, header=None, no_nones=False, drop_odds=False, delimiter='\t'):
     data = []
     with open(fname) as f:
-        reader = csv.reader(f, delimiter='\t')
+        reader = csv.reader(f, delimiter=delimiter)
         if header is None:
             header = reader.next()
         odd = False
